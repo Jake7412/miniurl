@@ -7,8 +7,7 @@ import (
 	"net/http"
 )
 
-//tämä consumer määrittää miten kutsutaan ei siis implementoija
-//top down implementointi, kutsuja määrittää interfacen
+// Handler is defined by the consumer (top-down / caller-owned interface).
 type Handler interface {
 	AddUrl(url string) (hash string, err error)
 }
@@ -23,9 +22,9 @@ func Bind(r *httprouter.Router, h Handler) {
 }
 
 type AddUrlReq struct {
-	Url  string `json:"url"`
-	Hash string `json:"hash"`
+	Url string `json:"url"`
 }
+
 type AddUrlResp struct {
 	Url  string `json:"url"`
 	Hash string `json:"hash"`
@@ -37,23 +36,26 @@ type ErrorResp struct {
 
 func (a *API) AddUrl(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
 	var v AddUrlReq
-	err := json.NewDecoder(r.Body).Decode(&v)
-	if err != nil {
-		responsJson(w, v, "Error response")
+	if err := json.NewDecoder(r.Body).Decode(&v); err != nil {
+		respondError(w, http.StatusBadRequest, "bad request")
+		return
 	}
 	hash, err := a.handler.AddUrl(v.Url)
 	if err != nil {
+		respondError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	responsJson(w, v, hash)
-
+	respondJSON(w, http.StatusOK, AddUrlResp{Url: v.Url, Hash: hash})
 }
 
-func responsJson(w http.ResponseWriter, v AddUrlReq, hash string) {
-	err := json.NewEncoder(w).Encode(AddUrlResp{Url: v.Url, Hash: hash})
-	if err != nil {
-		//TODO: correct slog
+func respondJSON(w http.ResponseWriter, status int, body any) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	if err := json.NewEncoder(w).Encode(body); err != nil {
 		fmt.Println(err)
-		//sys.Error.err.Error
 	}
+}
+
+func respondError(w http.ResponseWriter, status int, msg string) {
+	respondJSON(w, status, ErrorResp{Msg: msg})
 }

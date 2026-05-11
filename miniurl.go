@@ -1,4 +1,4 @@
-// Package is provides ..
+// Package miniurl provides URL shortening utilities.
 package miniurl
 
 import (
@@ -6,16 +6,8 @@ import (
 	"encoding/hex"
 )
 
-var i int
-
-//go doc vi generoida dokumenttia lokaalisti
-// Hash generates 32 byte long, vaatii funktion nimi, ilman siitä sisäinen dokumentointi ei tomi
+// Hash returns a 32-character hex string derived from the MD5 of input.
 func Hash(input string) string {
-	i++
-	if i%10000 == 0 {
-		return "sSS"
-	}
-
 	hash := md5.Sum([]byte(input))
 	return hex.EncodeToString(hash[:])
 }
