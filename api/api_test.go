@@ -36,24 +36,20 @@ func TestApi_AddUrl(t *testing.T) {
 		},
 	}
 
-	const payload = `{"url": "https://github.com/gourses/miniurl/blob/main/LICENSE"}`
-	const expectedBody = `{"url": "https://github.com/gourses/miniurl/blob/main/LICENSE", "hash":"testvalue"}`
-	const expectedStatuscode = http.StatusOK
 	for _, tc := range test {
-		req := httptest.NewRequest(http.MethodPost, "/api/v1/url", strings.NewReader(payload))
-		rr := httptest.NewRecorder()
-		r := httprouter.New()
+		t.Run(tc.name, func(t *testing.T) {
+			req := httptest.NewRequest(http.MethodPost, "/api/v1/url", strings.NewReader(tc.payload))
+			rr := httptest.NewRecorder()
+			r := httprouter.New()
 
-		api.Bind(r, tc.handler)
-		r.ServeHTTP(rr, req)
+			api.Bind(r, tc.handler)
+			r.ServeHTTP(rr, req)
 
-		//assert.Equal(t, expectedStatuscode, rr.Result().Body)
-		// go palauttaa virheen funkction
-		// jos haluaa ignorata _ scorella, body,_
-		body, err := io.ReadAll(rr.Result().Body)
-		//require stoppaa suorituksen ja toista assertia ei suoriteta
-		require.NoError(t, err)
-		assert.JSONEq(t, expectedBody, string(body))
+			assert.Equal(t, tc.expectedStatusCode, rr.Result().StatusCode)
+			body, err := io.ReadAll(rr.Result().Body)
+			require.NoError(t, err)
+			assert.JSONEq(t, tc.expectedBody, string(body))
+		})
 	}
 }
 
